@@ -283,25 +283,29 @@ var showPhotos=false;
 function resizeImg(file,maxW,cb){var reader=new FileReader();reader.onload=function(e){var img=new Image();img.onload=function(){var w=img.width,h=img.height;if(w>maxW){h=Math.round(h*(maxW/w));w=maxW}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);cb(c.toDataURL("image/jpeg",0.5))};img.src=e.target.result};reader.readAsDataURL(file)}
 function gg(n){for(var i=0;i<G.length;i++)if(n>=G[i].s&&n<=G[i].e)return G[i];return G[0]}
 function ld(){
-// Try IndexedDB first (more persistent on iOS), fall back to localStorage
+// Load data without photos from localStorage (fast)
 try{var d=localStorage.getItem(K);if(d){D=JSON.parse(d);migrate()}}catch(e){}
-idbGet(function(d2){if(d2){var ls=JSON.stringify(D);var idb=JSON.stringify(d2);if(idb.length>ls.length){D=d2;migrate();rn()}}});
-// Request persistent storage
+// Load full data with photos from IndexedDB (more space)
+idbGet(K,function(d2){if(d2){D=d2;migrate();rn()}
+// Also load separate photo store for older data
+idbGet("pkdx5_photos",function(ph){if(ph){for(var k in ph){if(D[k]&&!D[k].photo)D[k].photo=ph[k]}rn()}})});
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
-// Backup reminder
 try{var lastBackup=localStorage.getItem("pkdx_lastbackup");if(lastBackup){var days=Math.floor((Date.now()-parseInt(lastBackup))/(1000*60*60*24));if(days>=3){setTimeout(function(){if(confirm("Je laatste backup is "+days+" dagen geleden. Wil je nu een backup maken?"))document.getElementById("expBtn").click()},2000)}}}catch(e){}
 }
 function migrate(){var changed=false;for(var k in D){if(D[k].definitief!==undefined){D[k].verzameld=D[k].definitief;delete D[k].definitief;changed=true}}if(changed)sv()}
 function sv(){
-try{localStorage.setItem(K,JSON.stringify(D))}catch(e){alert("localStorage vol! Maak een backup en verwijder enkele foto's.")}
-idbSet(D);
+// Save to localStorage WITHOUT photos (stays small)
+var slim={};for(var k in D){slim[k]={};for(var p in D[k]){if(p!=="photo")slim[k][p]=D[k][p]}}
+try{localStorage.setItem(K,JSON.stringify(slim))}catch(e){}
+// Save full data WITH photos to IndexedDB (50MB+ space)
+idbSet(K,D);
 try{localStorage.setItem("pkdx_lastchange",Date.now())}catch(e){}
 }
 // IndexedDB helpers
 var idbName="pkdxDB",idbStore="data";
-function idbOpen(cb){var r=indexedDB.open(idbName,1);r.onupgradeneeded=function(e){e.target.result.createObjectStore(idbStore)};r.onsuccess=function(e){cb(e.target.result)};r.onerror=function(){cb(null)}}
-function idbSet(data){idbOpen(function(db){if(!db)return;var tx=db.transaction(idbStore,"readwrite");tx.objectStore(idbStore).put(JSON.stringify(data),K);tx.oncomplete=function(){db.close()}})}
-function idbGet(cb){idbOpen(function(db){if(!db){cb(null);return}var tx=db.transaction(idbStore,"readonly");var r=tx.objectStore(idbStore).get(K);r.onsuccess=function(){try{cb(r.result?JSON.parse(r.result):null)}catch(e){cb(null)}};r.onerror=function(){cb(null)};tx.oncomplete=function(){db.close()}})}
+function idbOpen(cb){var r=indexedDB.open(idbName,2);r.onupgradeneeded=function(e){if(!e.target.result.objectStoreNames.contains(idbStore))e.target.result.createObjectStore(idbStore)};r.onsuccess=function(e){cb(e.target.result)};r.onerror=function(){cb(null)}}
+function idbSet(key,data){idbOpen(function(db){if(!db)return;var tx=db.transaction(idbStore,"readwrite");tx.objectStore(idbStore).put(JSON.stringify(data),key);tx.oncomplete=function(){db.close()}})}
+function idbGet(key,cb){idbOpen(function(db){if(!db){cb(null);return}var tx=db.transaction(idbStore,"readonly");var r=tx.objectStore(idbStore).get(key);r.onsuccess=function(){try{cb(r.result?JSON.parse(r.result):null)}catch(e){cb(null)}};r.onerror=function(){cb(null)};tx.oncomplete=function(){db.close()}})}
 function pad(n){var s=""+n;while(s.length<4)s="0"+s;return"#"+s}
 function iu(n){return"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+n+".png"}
 function iuf(n){return"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"+n+".png"}
