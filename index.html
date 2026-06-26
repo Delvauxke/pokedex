@@ -280,10 +280,10 @@ var multiMode=false,multiSel={};
 var wlSort="",wlMin=0,wlMax=99999,wlSet="";
 var mPhoto="";
 var showPhotos=false;
-function resizeImg(file,maxW,cb){var reader=new FileReader();reader.onload=function(e){var img=new Image();img.onload=function(){var w=img.width,h=img.height;if(w>maxW){h=Math.round(h*(maxW/w));w=maxW}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);cb(c.toDataURL("image/jpeg",0.7))};img.src=e.target.result};reader.readAsDataURL(file)}
+function resizeImg(file,maxW,cb){var reader=new FileReader();reader.onload=function(e){var img=new Image();img.onload=function(){var w=img.width,h=img.height;if(w>maxW){h=Math.round(h*(maxW/w));w=maxW}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);cb(c.toDataURL("image/jpeg",0.5))};img.src=e.target.result};reader.readAsDataURL(file)}
 function gg(n){for(var i=0;i<G.length;i++)if(n>=G[i].s&&n<=G[i].e)return G[i];return G[0]}
 function ld(){try{var d=localStorage.getItem(K);if(d){D=JSON.parse(d);var changed=false;for(var k in D){if(D[k].definitief!==undefined){D[k].verzameld=D[k].definitief;delete D[k].definitief;changed=true}}if(changed)sv()}}catch(e){}}
-function sv(){try{localStorage.setItem(K,JSON.stringify(D))}catch(e){}}
+function sv(){try{localStorage.setItem(K,JSON.stringify(D))}catch(e){alert("Opslaan mislukt! Je opslag is waarschijnlijk vol. Probeer enkele foto's te verwijderen of maak een backup en wis oude data.")}}
 function pad(n){var s=""+n;while(s.length<4)s="0"+s;return"#"+s}
 function iu(n){return"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+n+".png"}
 function iuf(n){return"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"+n+".png"}
@@ -441,7 +441,7 @@ for(var i=1;i<=np;i++){doc.setPage(i);doc.setFontSize(6);doc.setTextColor(170,17
 doc.save("wishlist_"+new Date().toISOString().slice(0,10)+".pdf")});
 document.getElementById("photoUpload").addEventListener("click",function(){document.getElementById("photoFile").click()});
 document.getElementById("photoCamera").addEventListener("click",function(){document.getElementById("photoCam").click()});
-function handlePhoto(file){if(!file)return;resizeImg(file,400,function(data){mPhoto=data;document.getElementById("photoImg").src=data;document.getElementById("photoPreview").style.display="block"})}
+function handlePhoto(file){if(!file)return;resizeImg(file,250,function(data){mPhoto=data;document.getElementById("photoImg").src=data;document.getElementById("photoPreview").style.display="block"})}
 document.getElementById("photoFile").addEventListener("change",function(e){handlePhoto(e.target.files[0]);this.value=""});
 document.getElementById("photoCam").addEventListener("change",function(e){handlePhoto(e.target.files[0]);this.value=""});
 document.getElementById("photoDel").addEventListener("click",function(){mPhoto="";document.getElementById("photoPreview").style.display="none"});
